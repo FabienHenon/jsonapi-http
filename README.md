@@ -2,8 +2,8 @@
 
 Make HTTP requests with jsonapi decoding/encoding in Elm.
 
-This package makes use of the packages [https://package.elm-lang.org/packages/FabienHenon/jsonapi/latest/](jsonapi) and 
-[https://package.elm-lang.org/packages/krisajenkins/remotedata/latest/](remotedata).
+This package makes use of the packages [jsonapi](https://package.elm-lang.org/packages/FabienHenon/jsonapi/latest/) and 
+[remotedata](https://package.elm-lang.org/packages/krisajenkins/remotedata/latest/).
 
 You will be able to send HTTP requests that expect a jsonapi object as a response.
 

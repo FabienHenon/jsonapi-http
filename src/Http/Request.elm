@@ -3,9 +3,9 @@ module Http.Request exposing
     , request, requestCustomData, requestNoContent
     )
 
-{-| `Http.Request` allows you to create http requests with [https://package.elm-lang.org/packages/FabienHenon/jsonapi/latest/](`jsonapi`) objects.
+{-| `Http.Request` allows you to create http requests with [`jsonapi`](https://package.elm-lang.org/packages/FabienHenon/jsonapi/latest/) objects.
 
-The request functions will return a [https://package.elm-lang.org/packages/krisajenkins/remotedata/latest/](`RemoteData`) with a jsonapi `Document`.
+The request functions will return a [`RemoteData`](https://package.elm-lang.org/packages/krisajenkins/remotedata/latest/) with a jsonapi `Document`.
 The `content-type` used in the request headers is `application/vnd.api+json` according to the jsonapi specification.
 
 
