@@ -1,7 +1,6 @@
 module Http.Request exposing
-    ( Request, RequestCustomData, RequestNoContent
-    , request, requestCustomData, requestNoContent
-    , RequestFiles, requestFiles
+    ( Request, RequestCustomData, RequestNoContent, RequestFiles
+    , request, requestCustomData, requestNoContent, requestFiles
     )
 
 {-| `Http.Request` allows you to create http requests with [`jsonapi`](https://package.elm-lang.org/packages/FabienHenon/jsonapi/latest/) objects.
@@ -12,12 +11,12 @@ The `content-type` used in the request headers is `application/vnd.api+json` acc
 
 # Definitions
 
-@docs Request, RequestCustomData, RequestNoContent
+@docs Request, RequestCustomData, RequestNoContent, RequestFiles
 
 
 # Requests
 
-@docs request, requestCustomData, requestNoContent
+@docs request, requestCustomData, requestNoContent, requestFiles
 
 -}
 
