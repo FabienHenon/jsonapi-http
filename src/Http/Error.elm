@@ -1,6 +1,6 @@
 module Http.Error exposing
     ( RequestError(..), ErrorConfig
-    , displayError, getErrorForField
+    , displayError, getErrorForField, getJsonApiErrors
     )
 
 {-| The `Http.Error` module defines a new kind of http error related to json api
@@ -13,7 +13,7 @@ module Http.Error exposing
 
 # Functions
 
-@docs displayError, getErrorForField
+@docs displayError, getErrorForField, getJsonApiErrors
 
 -}
 
@@ -112,6 +112,60 @@ getErrorForField field =
     List.filter (isCorrectField field)
         >> List.head
         >> Maybe.map getErrorMsg
+
+
+{-| Retuens a list of the json api errors or an empty list if there is no error.
+
+Let's say you have the following json api errors:
+
+    {
+       "errors":[
+          {
+             "detail":"Password should be at least 8 character(s)",
+             "source":{
+                "pointer":"/data/attributes/password"
+             },
+             "title":"should be at least 8 character(s)"
+          },
+          {
+             "detail":"Username must no be empty",
+             "source":{
+                "pointer":"/data/attributes/username"
+             },
+             "title":"should not be empty"
+          }
+       ],
+       "jsonapi":{
+          "version":"1.0"
+       }
+    }
+
+Calling `getJsonApiErrors errors` will return:
+
+    [ ( "password", "Password should be at least 8 character(s)" )
+    , ( "username", "Username must no be empty" )
+    ]
+
+-}
+getJsonApiErrors : RequestError -> List ( String, String )
+getJsonApiErrors error =
+    case error of
+        JsonApiError errors ->
+            errors
+                |> List.filterMap getError
+
+        HttpError err ->
+            []
+
+        CustomError err ->
+            []
+
+
+getError : Decode.Error -> Maybe ( String, String )
+getError error =
+    error.source
+        |> Maybe.andThen getSourceValue
+        |> Maybe.map (\value -> ( value, getErrorMsg error ))
 
 
 isCorrectField : String -> Decode.Error -> Bool
