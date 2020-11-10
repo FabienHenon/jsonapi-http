@@ -189,7 +189,10 @@ getSourceValue =
     JD.decodeValue (JD.dict JD.string)
         >> Result.toMaybe
         >> Maybe.andThen (Dict.get "pointer")
-        >> Maybe.map (String.replace "/data/attributes/" "")
+        >> Maybe.map
+            (String.replace "/data/attributes/" ""
+                >> String.replace "/data/relationships/" ""
+            )
 
 
 addFieldClass : JD.Value -> Maybe String
