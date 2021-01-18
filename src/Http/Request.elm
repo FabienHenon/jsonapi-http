@@ -20,6 +20,7 @@ The `content-type` used in the request headers is `application/vnd.api+json` acc
 
 -}
 
+import Dict
 import File exposing (File)
 import Http
 import Http.Error exposing (RequestError(..))
@@ -394,8 +395,20 @@ noContentResolver headersToExtract mapper =
 
 
 extractHeaders : List String -> Http.Metadata -> List ( String, String )
-extractHeaders headersToExtract metadata =
-    []
+extractHeaders headersToExtract =
+    let
+        headersToExtractLower =
+            headersToExtract
+                |> List.map String.toLower
+    in
+    .headers
+        >> Dict.toList
+        >> List.filter (Tuple.first >> String.toLower >> isMember headersToExtractLower)
+
+
+isMember : List String -> String -> Bool
+isMember items item =
+    List.member item items
 
 
 removeHeadersFromTask : RemoteData.RemoteData ( err, List ( String, String ) ) ( succ, List ( String, String ) ) -> RemoteData.RemoteData err succ
