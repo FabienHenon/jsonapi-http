@@ -1,5 +1,6 @@
 # jsonapi-http
 
+
 Make HTTP requests with jsonapi decoding/encoding in Elm.
 
 This package makes use of the packages [jsonapi](https://package.elm-lang.org/packages/FabienHenon/jsonapi/latest/) and 
