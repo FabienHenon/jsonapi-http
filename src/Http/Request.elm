@@ -1,6 +1,6 @@
 module Http.Request exposing
-    ( Request, RequestCustomData, RequestNoContent, RequestFiles, RequestAdv, RequestEx, RequestCustomDataEx, RequestNoContentEx, RequestFilesEx, RequestAdvEx, AdvanceContent(..)
-    , request, requestCustomData, requestNoContent, requestFiles, requestAdv, requestEx, requestCustomDataEx, requestNoContentEx, requestFilesEx, requestAdvEx
+    ( Request, RequestCustomData, RequestNoContent, RequestFiles, RequestAdv, RequestEx, RequestCustomDataEx, RequestNoContentEx, RequestFilesEx, RequestAdvEx, RequestFilesAdv, RequestFilesAdvEx, RequestCustomDataAdv, RequestCustomDataAdvEx, AdvanceContent(..)
+    , request, requestCustomData, requestNoContent, requestFiles, requestAdv, requestEx, requestCustomDataEx, requestNoContentEx, requestFilesEx, requestAdvEx, requestCustomDataAdv, requestCustomDataAdvEx, requestFilesAdv, requestFilesAdvEx
     )
 
 {-| `Http.Request` allows you to create http requests with [`jsonapi`](https://package.elm-lang.org/packages/FabienHenon/jsonapi/latest/) objects.
@@ -11,12 +11,12 @@ The `content-type` used in the request headers is `application/vnd.api+json` acc
 
 # Definitions
 
-@docs Request, RequestCustomData, RequestNoContent, RequestFiles, RequestAdv, RequestEx, RequestCustomDataEx, RequestNoContentEx, RequestFilesEx, RequestAdvEx, AdvanceContent
+@docs Request, RequestCustomData, RequestNoContent, RequestFiles, RequestAdv, RequestEx, RequestCustomDataEx, RequestNoContentEx, RequestFilesEx, RequestAdvEx, RequestFilesAdv, RequestFilesAdvEx, RequestCustomDataAdv, RequestCustomDataAdvEx, AdvanceContent
 
 
 # Requests
 
-@docs request, requestCustomData, requestNoContent, requestFiles, requestAdv, requestEx, requestCustomDataEx, requestNoContentEx, requestFilesEx, requestAdvEx
+@docs request, requestCustomData, requestNoContent, requestFiles, requestAdv, requestEx, requestCustomDataEx, requestNoContentEx, requestFilesEx, requestAdvEx, requestCustomDataAdv, requestCustomDataAdvEx, requestFilesAdv, requestFilesAdvEx
 
 -}
 
@@ -32,6 +32,18 @@ import JsonApi.Decode as Decode
 import JsonApi.Document exposing (Document)
 import RemoteData
 import Task exposing (Task)
+
+
+{-| Type used to specify the content received from an advanced request like `requestAdv` or `requestAdvEx`
+Possible values are:
+
+  - We received a JsonAPI Document
+  - We received no content (a 204 response from the API)
+
+-}
+type AdvanceContent meta data
+    = DocumentContent (Document meta data)
+    | NoContent
 
 
 {-| Defines a `Request` with a url, some headers, a body, and a jsonapi document decoder.
@@ -60,6 +72,36 @@ type alias RequestEx meta data =
     }
 
 
+{-| Defines a `RequestAdv` with a url, some headers, a body, and a jsonapi document decoder.
+`meta`and `data` are types used by the jsonapi document that represent the `meta` object you would like to decode, and the `data` object you would
+like to decode?
+Risky uses the `withCredentials`
+-}
+type alias RequestAdv meta data =
+    { url : Http.Url.Url
+    , headers : List Http.Header
+    , body : JE.Value
+    , documentDecoder : JD.Decoder (Result (List Decode.Error) (Document meta data))
+    , risky : Bool
+    }
+
+
+{-| Defines a `RequestAdvEx` with a url, some headers, a body, and a jsonapi document decoder.
+`meta`and `data` are types used by the jsonapi document that represent the `meta` object you would like to decode, and the `data` object you would
+like to decode.
+You can also extract some response headers to use them later
+Risky uses the `withCredentials`
+-}
+type alias RequestAdvEx meta data =
+    { url : Http.Url.Url
+    , headers : List Http.Header
+    , body : JE.Value
+    , documentDecoder : JD.Decoder (Result (List Decode.Error) (Document meta data))
+    , extractHeaders : List String
+    , risky : Bool
+    }
+
+
 {-| Defines a `Request` with a url, some headers, a body, and a custom decoder.
 `data` is the type of the object you would like to decode.
 -}
@@ -81,6 +123,34 @@ type alias RequestCustomDataEx data =
     , body : JE.Value
     , documentDecoder : JD.Decoder (Result (List Decode.Error) data)
     , extractHeaders : List String
+    }
+
+
+{-| Defines an advance `Request` with a url, some headers, a body, and a custom decoder.
+`data` is the type of the object you would like to decode.
+Risky uses the `withCredentials`
+-}
+type alias RequestCustomDataAdv data =
+    { url : Http.Url.Url
+    , headers : List Http.Header
+    , body : JE.Value
+    , documentDecoder : JD.Decoder (Result (List Decode.Error) data)
+    , risky : Bool
+    }
+
+
+{-| Defines an advance `Request` with a url, some headers, a body, and a custom decoder.
+`data` is the type of the object you would like to decode.
+You can also extract some response headers to use them later
+Risky uses the `withCredentials`
+-}
+type alias RequestCustomDataAdvEx data =
+    { url : Http.Url.Url
+    , headers : List Http.Header
+    , body : JE.Value
+    , documentDecoder : JD.Decoder (Result (List Decode.Error) data)
+    , extractHeaders : List String
+    , risky : Bool
     }
 
 
@@ -116,6 +186,42 @@ type alias RequestFilesEx meta data msg =
     }
 
 
+{-| Defines an advance `Request` with a url, some headers, a list of files, and a custom decoder.
+`data` is the type of the object you would like to decode.
+Risky uses the `withCredentials`
+-}
+type alias RequestFilesAdv meta data msg =
+    { url : Http.Url.Url
+    , headers : List Http.Header
+    , multipartNames : List String
+    , files : List File
+    , multipartEncoder : String -> File -> Http.Part
+    , documentDecoder : JD.Decoder (Result (List Decode.Error) (Document meta data))
+    , tracker : Maybe String
+    , msg : RemoteData.RemoteData RequestError (Document meta data) -> msg
+    , risky : Bool
+    }
+
+
+{-| Defines an advance `Request` with a url, some headers, a list of files, and a custom decoder.
+`data` is the type of the object you would like to decode.
+You can also extract some response headers to use them later
+Risky uses the `withCredentials`
+-}
+type alias RequestFilesAdvEx meta data msg =
+    { url : Http.Url.Url
+    , headers : List Http.Header
+    , multipartNames : List String
+    , files : List File
+    , multipartEncoder : String -> File -> Http.Part
+    , documentDecoder : JD.Decoder (Result (List Decode.Error) (Document meta data))
+    , tracker : Maybe String
+    , extractHeaders : List String
+    , msg : RemoteData.RemoteData ( RequestError, List ( String, String ) ) ( Document meta data, List ( String, String ) ) -> msg
+    , risky : Bool
+    }
+
+
 {-| Defines a `Request` with a url, some headers, and a body. There is no content decoder.
 Useful for `DELETE` requests for instance.
 -}
@@ -134,44 +240,6 @@ type alias RequestNoContentEx =
     { url : Http.Url.Url
     , headers : List Http.Header
     , body : JE.Value
-    , extractHeaders : List String
-    }
-
-
-{-| Type used to specify the content received from an advanced request like `requestAdv` or `requestAdvEx`
-Possible values are:
-
-  - We received a JsonAPI Document
-  - We received no content (a 204 response from the API)
-
--}
-type AdvanceContent meta data
-    = DocumentContent (Document meta data)
-    | NoContent
-
-
-{-| Defines a `RequestAdv` with a url, some headers, a body, and a jsonapi document decoder.
-`meta`and `data` are types used by the jsonapi document that represent the `meta` object you would like to decode, and the `data` object you would
-like to decode
--}
-type alias RequestAdv meta data =
-    { url : Http.Url.Url
-    , headers : List Http.Header
-    , body : JE.Value
-    , documentDecoder : JD.Decoder (Result (List Decode.Error) (Document meta data))
-    }
-
-
-{-| Defines a `RequestAdvEx` with a url, some headers, a body, and a jsonapi document decoder.
-`meta`and `data` are types used by the jsonapi document that represent the `meta` object you would like to decode, and the `data` object you would
-like to decode.
-You can also extract some response headers to use them later
--}
-type alias RequestAdvEx meta data =
-    { url : Http.Url.Url
-    , headers : List Http.Header
-    , body : JE.Value
-    , documentDecoder : JD.Decoder (Result (List Decode.Error) (Document meta data))
     , extractHeaders : List String
     }
 
@@ -212,15 +280,12 @@ requestEx request_ =
 -}
 requestCustomData : RequestCustomData data -> Task Never (RemoteData.RemoteData RequestError data)
 requestCustomData request_ =
-    Http.task
-        { method = request_.url |> .method |> Http.Methods.toString
-        , url = request_.url |> .url
-        , headers =
-            Http.header "Accept" "application/vnd.api+json"
-                :: request_.headers
-        , body = Http.stringBody "application/vnd.api+json" (JE.encode 0 request_.body)
-        , resolver = resourceResolver request_.documentDecoder [] removeHeadersFromTask
-        , timeout = Nothing
+    requestCustomDataAdv
+        { url = request_.url
+        , headers = request_.headers
+        , body = request_.body
+        , documentDecoder = request_.documentDecoder
+        , risky = False
         }
 
 
@@ -228,15 +293,13 @@ requestCustomData request_ =
 -}
 requestCustomDataEx : RequestCustomDataEx data -> Task Never (RemoteData.RemoteData ( RequestError, List ( String, String ) ) ( data, List ( String, String ) ))
 requestCustomDataEx request_ =
-    Http.task
-        { method = request_.url |> .method |> Http.Methods.toString
-        , url = request_.url |> .url
-        , headers =
-            Http.header "Accept" "application/vnd.api+json"
-                :: request_.headers
-        , body = Http.stringBody "application/vnd.api+json" (JE.encode 0 request_.body)
-        , resolver = resourceResolver request_.documentDecoder request_.extractHeaders identity
-        , timeout = Nothing
+    requestCustomDataAdvEx
+        { url = request_.url
+        , headers = request_.headers
+        , body = request_.body
+        , documentDecoder = request_.documentDecoder
+        , extractHeaders = request_.extractHeaders
+        , risky = False
         }
 
 
@@ -244,16 +307,16 @@ requestCustomDataEx request_ =
 -}
 requestFiles : RequestFiles meta data msg -> Cmd msg
 requestFiles request_ =
-    Http.request
-        { method = request_.url |> .method |> Http.Methods.toString
-        , headers =
-            Http.header "Accept" "application/vnd.api+json"
-                :: request_.headers
-        , url = request_.url |> .url
-        , body = List.map2 request_.multipartEncoder request_.multipartNames request_.files |> Http.multipartBody
-        , expect = resourceExpecter (removeHeadersFromTask >> request_.msg) request_.documentDecoder []
-        , timeout = Nothing
+    requestFilesAdv
+        { url = request_.url
+        , headers = request_.headers
+        , multipartNames = request_.multipartNames
+        , files = request_.files
+        , multipartEncoder = request_.multipartEncoder
+        , documentDecoder = request_.documentDecoder
         , tracker = request_.tracker
+        , msg = request_.msg
+        , risky = False
         }
 
 
@@ -261,16 +324,17 @@ requestFiles request_ =
 -}
 requestFilesEx : RequestFilesEx meta data msg -> Cmd msg
 requestFilesEx request_ =
-    Http.request
-        { method = request_.url |> .method |> Http.Methods.toString
-        , headers =
-            Http.header "Accept" "application/vnd.api+json"
-                :: request_.headers
-        , url = request_.url |> .url
-        , body = List.map2 request_.multipartEncoder request_.multipartNames request_.files |> Http.multipartBody
-        , expect = resourceExpecter request_.msg request_.documentDecoder request_.extractHeaders
-        , timeout = Nothing
+    requestFilesAdvEx
+        { url = request_.url
+        , headers = request_.headers
+        , multipartNames = request_.multipartNames
+        , files = request_.files
+        , multipartEncoder = request_.multipartEncoder
+        , documentDecoder = request_.documentDecoder
         , tracker = request_.tracker
+        , extractHeaders = request_.extractHeaders
+        , msg = request_.msg
+        , risky = False
         }
 
 
@@ -308,9 +372,14 @@ requestNoContentEx request_ =
 
 {-| Create an advanced request task that will decode an advance content: a jsonapi document or no content
 -}
-requestAdv : Request meta data -> Task Never (RemoteData.RemoteData RequestError (AdvanceContent meta data))
+requestAdv : RequestAdv meta data -> Task Never (RemoteData.RemoteData RequestError (AdvanceContent meta data))
 requestAdv request_ =
-    Http.task
+    (if request_.risky then
+        Http.riskyTask
+
+     else
+        Http.task
+    )
         { method = request_.url |> .method |> Http.Methods.toString
         , url = request_.url |> .url
         , headers =
@@ -324,9 +393,14 @@ requestAdv request_ =
 
 {-| Create a request task that will decode an advance content: a jsonapi document or no content. It will also return in the msg the list of extracted headers.
 -}
-requestAdvEx : RequestEx meta data -> Task Never (RemoteData.RemoteData ( RequestError, List ( String, String ) ) ( AdvanceContent meta data, List ( String, String ) ))
+requestAdvEx : RequestAdvEx meta data -> Task Never (RemoteData.RemoteData ( RequestError, List ( String, String ) ) ( AdvanceContent meta data, List ( String, String ) ))
 requestAdvEx request_ =
-    Http.task
+    (if request_.risky then
+        Http.riskyTask
+
+     else
+        Http.task
+    )
         { method = request_.url |> .method |> Http.Methods.toString
         , url = request_.url |> .url
         , headers =
@@ -335,6 +409,92 @@ requestAdvEx request_ =
         , body = Http.stringBody "application/vnd.api+json" (JE.encode 0 request_.body)
         , resolver = resourceAdvResolver request_.documentDecoder request_.extractHeaders identity
         , timeout = Nothing
+        }
+
+
+{-| Create a request task that will decode a custom object
+-}
+requestCustomDataAdv : RequestCustomDataAdv data -> Task Never (RemoteData.RemoteData RequestError data)
+requestCustomDataAdv request_ =
+    (if request_.risky then
+        Http.riskyTask
+
+     else
+        Http.task
+    )
+        { method = request_.url |> .method |> Http.Methods.toString
+        , url = request_.url |> .url
+        , headers =
+            Http.header "Accept" "application/vnd.api+json"
+                :: request_.headers
+        , body = Http.stringBody "application/vnd.api+json" (JE.encode 0 request_.body)
+        , resolver = resourceResolver request_.documentDecoder [] removeHeadersFromTask
+        , timeout = Nothing
+        }
+
+
+{-| Create a request task that will decode a custom object. It will also return in the msg the list of extracted headers.
+-}
+requestCustomDataAdvEx : RequestCustomDataAdvEx data -> Task Never (RemoteData.RemoteData ( RequestError, List ( String, String ) ) ( data, List ( String, String ) ))
+requestCustomDataAdvEx request_ =
+    (if request_.risky then
+        Http.riskyTask
+
+     else
+        Http.task
+    )
+        { method = request_.url |> .method |> Http.Methods.toString
+        , url = request_.url |> .url
+        , headers =
+            Http.header "Accept" "application/vnd.api+json"
+                :: request_.headers
+        , body = Http.stringBody "application/vnd.api+json" (JE.encode 0 request_.body)
+        , resolver = resourceResolver request_.documentDecoder request_.extractHeaders identity
+        , timeout = Nothing
+        }
+
+
+{-| Create a request files that will decode a jsonapi object
+-}
+requestFilesAdv : RequestFilesAdv meta data msg -> Cmd msg
+requestFilesAdv request_ =
+    (if request_.risky then
+        Http.riskyRequest
+
+     else
+        Http.request
+    )
+        { method = request_.url |> .method |> Http.Methods.toString
+        , headers =
+            Http.header "Accept" "application/vnd.api+json"
+                :: request_.headers
+        , url = request_.url |> .url
+        , body = List.map2 request_.multipartEncoder request_.multipartNames request_.files |> Http.multipartBody
+        , expect = resourceExpecter (removeHeadersFromTask >> request_.msg) request_.documentDecoder []
+        , timeout = Nothing
+        , tracker = request_.tracker
+        }
+
+
+{-| Create a request files that will decode a jsonapi object. It will also return in the msg the list of extracted headers.
+-}
+requestFilesAdvEx : RequestFilesAdvEx meta data msg -> Cmd msg
+requestFilesAdvEx request_ =
+    (if request_.risky then
+        Http.riskyRequest
+
+     else
+        Http.request
+    )
+        { method = request_.url |> .method |> Http.Methods.toString
+        , headers =
+            Http.header "Accept" "application/vnd.api+json"
+                :: request_.headers
+        , url = request_.url |> .url
+        , body = List.map2 request_.multipartEncoder request_.multipartNames request_.files |> Http.multipartBody
+        , expect = resourceExpecter request_.msg request_.documentDecoder request_.extractHeaders
+        , timeout = Nothing
+        , tracker = request_.tracker
         }
 
 
