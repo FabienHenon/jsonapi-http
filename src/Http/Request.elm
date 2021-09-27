@@ -1,6 +1,6 @@
 module Http.Request exposing
-    ( Request, RequestCustomData, RequestNoContent, RequestFiles, RequestAdv, RequestEx, RequestCustomDataEx, RequestNoContentEx, RequestFilesEx, RequestAdvEx, RequestFilesAdv, RequestFilesAdvEx, RequestCustomDataAdv, RequestCustomDataAdvEx, AdvanceContent(..)
-    , request, requestCustomData, requestNoContent, requestFiles, requestAdv, requestEx, requestCustomDataEx, requestNoContentEx, requestFilesEx, requestAdvEx, requestCustomDataAdv, requestCustomDataAdvEx, requestFilesAdv, requestFilesAdvEx
+    ( Request, RequestCustomData, RequestNoContent, RequestFiles, RequestAdv, RequestEx, RequestCustomDataEx, RequestNoContentEx, RequestFilesEx, RequestAdvEx, RequestFilesAdv, RequestFilesAdvEx, RequestCustomDataAdv, RequestCustomDataAdvEx, RequestNoContentAdv, RequestNoContentAdvEx, AdvanceContent(..)
+    , request, requestCustomData, requestNoContent, requestFiles, requestAdv, requestEx, requestCustomDataEx, requestNoContentEx, requestFilesEx, requestAdvEx, requestCustomDataAdv, requestCustomDataAdvEx, requestFilesAdv, requestFilesAdvEx, requestNoContentAdv, requestNoContentAdvEx
     )
 
 {-| `Http.Request` allows you to create http requests with [`jsonapi`](https://package.elm-lang.org/packages/FabienHenon/jsonapi/latest/) objects.
@@ -11,12 +11,12 @@ The `content-type` used in the request headers is `application/vnd.api+json` acc
 
 # Definitions
 
-@docs Request, RequestCustomData, RequestNoContent, RequestFiles, RequestAdv, RequestEx, RequestCustomDataEx, RequestNoContentEx, RequestFilesEx, RequestAdvEx, RequestFilesAdv, RequestFilesAdvEx, RequestCustomDataAdv, RequestCustomDataAdvEx, AdvanceContent
+@docs Request, RequestCustomData, RequestNoContent, RequestFiles, RequestAdv, RequestEx, RequestCustomDataEx, RequestNoContentEx, RequestFilesEx, RequestAdvEx, RequestFilesAdv, RequestFilesAdvEx, RequestCustomDataAdv, RequestCustomDataAdvEx, RequestNoContentAdv, RequestNoContentAdvEx, AdvanceContent
 
 
 # Requests
 
-@docs request, requestCustomData, requestNoContent, requestFiles, requestAdv, requestEx, requestCustomDataEx, requestNoContentEx, requestFilesEx, requestAdvEx, requestCustomDataAdv, requestCustomDataAdvEx, requestFilesAdv, requestFilesAdvEx
+@docs request, requestCustomData, requestNoContent, requestFiles, requestAdv, requestEx, requestCustomDataEx, requestNoContentEx, requestFilesEx, requestAdvEx, requestCustomDataAdv, requestCustomDataAdvEx, requestFilesAdv, requestFilesAdvEx, requestNoContentAdv, requestNoContentAdvEx
 
 -}
 
@@ -244,6 +244,32 @@ type alias RequestNoContentEx =
     }
 
 
+{-| Defines a `Request` with a url, some headers, and a body. There is no content decoder.
+Useful for `DELETE` requests for instance.
+Risky uses the `withCredentials`
+-}
+type alias RequestNoContentAdv =
+    { url : Http.Url.Url
+    , headers : List Http.Header
+    , body : JE.Value
+    , risky : Bool
+    }
+
+
+{-| Defines a `Request` with a url, some headers, and a body. There is no content decoder.
+Useful for `DELETE` requests for instance.
+You can also extract some response headers to use them later
+Risky uses the `withCredentials`
+-}
+type alias RequestNoContentAdvEx =
+    { url : Http.Url.Url
+    , headers : List Http.Header
+    , body : JE.Value
+    , extractHeaders : List String
+    , risky : Bool
+    }
+
+
 {-| Create a request task that will decode a jsonapi object
 -}
 request : Request meta data -> Task Never (RemoteData.RemoteData RequestError (Document meta data))
@@ -342,7 +368,37 @@ requestFilesEx request_ =
 -}
 requestNoContent : RequestNoContent -> Task Never (RemoteData.RemoteData RequestError ())
 requestNoContent request_ =
-    Http.task
+    requestNoContentAdv
+        { url = request_.url
+        , headers = request_.headers
+        , body = request_.body
+        , risky = False
+        }
+
+
+{-| Create a request task that will expect nothing to decode. It will also return in the msg the list of extracted headers.
+-}
+requestNoContentEx : RequestNoContentEx -> Task Never (RemoteData.RemoteData ( RequestError, List ( String, String ) ) (List ( String, String )))
+requestNoContentEx request_ =
+    requestNoContentAdvEx
+        { url = request_.url
+        , headers = request_.headers
+        , body = request_.body
+        , extractHeaders = request_.extractHeaders
+        , risky = False
+        }
+
+
+{-| Create a request task that will expect nothing to decode
+-}
+requestNoContentAdv : RequestNoContentAdv -> Task Never (RemoteData.RemoteData RequestError ())
+requestNoContentAdv request_ =
+    (if request_.risky then
+        Http.riskyTask
+
+     else
+        Http.task
+    )
         { method = request_.url |> .method |> Http.Methods.toString
         , url = request_.url |> .url
         , headers =
@@ -356,9 +412,14 @@ requestNoContent request_ =
 
 {-| Create a request task that will expect nothing to decode. It will also return in the msg the list of extracted headers.
 -}
-requestNoContentEx : RequestNoContentEx -> Task Never (RemoteData.RemoteData ( RequestError, List ( String, String ) ) (List ( String, String )))
-requestNoContentEx request_ =
-    Http.task
+requestNoContentAdvEx : RequestNoContentAdvEx -> Task Never (RemoteData.RemoteData ( RequestError, List ( String, String ) ) (List ( String, String )))
+requestNoContentAdvEx request_ =
+    (if request_.risky then
+        Http.riskyTask
+
+     else
+        Http.task
+    )
         { method = request_.url |> .method |> Http.Methods.toString
         , url = request_.url |> .url
         , headers =
